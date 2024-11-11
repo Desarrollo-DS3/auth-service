@@ -1,3 +1,4 @@
+import pybreaker
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializers import RegisterUserSerializer, UserSerializer
 from .permissions import IsAdmin
+from breaker.circuit_breaker import auth_breaker
 
 class RegisterUserView(APIView):
     def post(self, request):
@@ -27,19 +29,25 @@ class RegisterWarehouseAssistantView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
-    def post(self, request):
+    @auth_breaker
+    def authenticate_user(self, email, password):
+        user = User.objects.get(email=email)
+        if user.check_password(password):
+            return user
+        raise User.DoesNotExist  # Para manejar credenciales incorrectas
+
+    def post(self, request):        
         email = request.data.get('email')
         password = request.data.get('password')
         try:
-            user = User.objects.get(email=email)
-            if user.check_password(password):
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'user': UserSerializer(user).data
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+            user = self.authenticate_user(email, password)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': UserSerializer(user).data
+            }, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        except pybreaker.CircuitBreakerError:
+            return Response({"error": "Service temporarily unavailable. Please try again later."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
