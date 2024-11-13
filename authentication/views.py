@@ -43,8 +43,8 @@ class LoginView(APIView):
             user = self.authenticate_user(email, password)
             refresh = RefreshToken.for_user(user)
             return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
+                'refresh': f"Bearer {str(refresh)}",
+                'access': f"Bearer {str(refresh.access_token)}",
                 'user': UserSerializer(user).data
             }, status=status.HTTP_200_OK)
         except User.DoesNotExist:
