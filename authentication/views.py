@@ -2,7 +2,7 @@ import pybreaker
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 from .models import User
 from .serializers import RegisterUserSerializer, UserSerializer
 from .permissions import IsAdmin
@@ -41,10 +41,9 @@ class LoginView(APIView):
         password = request.data.get('password')
         try:
             user = self.authenticate_user(email, password)
-            refresh = RefreshToken.for_user(user)
+            refresh = AccessToken.for_user(user)
             return Response({
-                'refresh': f"Bearer {str(refresh)}",
-                'access': f"Bearer {str(refresh.access_token)}",
+                'access': f"Bearer {str(refresh)}",
                 'user': UserSerializer(user).data
             }, status=status.HTTP_200_OK)
         except User.DoesNotExist:
