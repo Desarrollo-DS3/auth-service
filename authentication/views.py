@@ -7,6 +7,9 @@ from .models import User
 from .serializers import RegisterUserSerializer, UserSerializer
 from .permissions import IsAdmin
 from breaker.circuit_breaker import auth_breaker
+import jwt
+from datetime import datetime, timedelta, timezone
+from django.conf import settings
 
 class RegisterUserView(APIView):
     def post(self, request):
@@ -40,10 +43,17 @@ class LoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
         try:
-            user = self.authenticate_user(email, password)
-            refresh = AccessToken.for_user(user)
+            user = self.authenticate_user(email, password)            
+            payload = {
+                "user_id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "exp": datetime.now(timezone.utc) + timedelta(days=365*5),
+                "iat": datetime.now(timezone.utc)
+            }
+            token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm='HS256')
             return Response({
-                'access': f"Bearer {str(refresh)}",
+                'access': f"Bearer {str(token)}",
                 'user': UserSerializer(user).data
             }, status=status.HTTP_200_OK)
         except User.DoesNotExist:

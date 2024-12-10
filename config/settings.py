@@ -10,6 +10,8 @@ SECRET_KEY = config('SECRET_KEY', default='secret')
 
 DEBUG = config('DEBUG', default=False)
 
+JWT_SECRET_KEY = config('JWT_SECRET_KEY')
+
 ALLOWED_HOSTS = ['*']
 
 
@@ -60,7 +62,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
 DATABASES = {
     'default': dj_database_url.config(default=config("DATABASE_URL"))
 }
@@ -69,13 +70,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=365*5),
-    'REFRESH_TOKEN_LIFETIME': None,
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
 }
 
 AUTH_PASSWORD_VALIDATORS = [
