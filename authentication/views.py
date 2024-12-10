@@ -2,10 +2,8 @@ import pybreaker
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import AccessToken
 from .models import User
 from .serializers import RegisterUserSerializer, UserSerializer
-from .permissions import IsAdmin
 from breaker.circuit_breaker import auth_breaker
 import jwt
 from datetime import datetime, timedelta, timezone
@@ -20,8 +18,6 @@ class RegisterUserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class RegisterWarehouseAssistantView(APIView):
-    #permission_classes = [IsAdmin]
-
     def post(self, request):
         data = request.data.copy()
         data['role'] = 'warehouse_assistant'  # Forzamos el rol
